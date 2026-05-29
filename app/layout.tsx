@@ -24,7 +24,8 @@ export const metadata: Metadata = {
 
 const NAV = [
   { href: "/", label: "Matches" },
-  { href: "/bracket", label: "Bracket" },
+  { href: "/tournament", label: "Tournament" },
+  { href: "/bracket", label: "Results" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/me", label: "My Picks" },
 ];

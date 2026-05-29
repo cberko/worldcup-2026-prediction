@@ -104,3 +104,48 @@ export async function fetchAllMatches(): Promise<Match[]> {
   const data = (await res.json()) as { matches?: FdMatch[] };
   return (data.matches ?? []).map(mapMatch);
 }
+
+export type GroupStanding = {
+  group_name: string;
+  standings: { position: number; team: string }[];
+};
+
+type FdStanding = {
+  type: string; // TOTAL | HOME | AWAY
+  group: string | null; // "GROUP_A" or "Group A"
+  table: { position: number; team: { name: string | null; shortName?: string | null } }[];
+};
+
+/** Fetch the group tables (TOTAL) for the competition. */
+export async function fetchStandings(): Promise<GroupStanding[]> {
+  const token = process.env.FOOTBALL_DATA_TOKEN;
+  if (!token) throw new Error("FOOTBALL_DATA_TOKEN is not set");
+  const competition = process.env.FOOTBALL_DATA_COMPETITION || "WC";
+
+  const res = await fetch(`${BASE}/competitions/${competition}/standings`, {
+    headers: { "X-Auth-Token": token },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`football-data standings ${res.status}: ${body.slice(0, 200)}`);
+  }
+
+  const data = (await res.json()) as { standings?: FdStanding[] };
+  return (data.standings ?? [])
+    .filter((s) => s.type === "TOTAL" && s.group)
+    .map((s) => ({
+      group_name: normalizeGroupName(s.group as string),
+      standings: s.table.map((r) => ({
+        position: r.position,
+        team: r.team.name ?? r.team.shortName ?? "TBD",
+      })),
+    }));
+}
+
+// "GROUP_A" / "Group A" → "Group A" (match the form stored on matches.group_name = "GROUP_A"?)
+// matches.group_name comes from the matches endpoint as e.g. "GROUP_A". Keep that canonical form.
+function normalizeGroupName(raw: string): string {
+  const up = raw.toUpperCase().replace(/\s+/g, "_");
+  return up.startsWith("GROUP_") ? up : `GROUP_${up}`;
+}

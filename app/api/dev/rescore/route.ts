@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scorePrediction } from "@/lib/scoring";
+import { scoreBracketPrediction, scoreGroupPrediction } from "@/lib/scoring2";
 import type { Match } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,11 +35,44 @@ export async function GET(req: NextRequest) {
       await supabase.from("predictions").update({ points_awarded: pts }).eq("id", p.id);
       scoredPredictions++;
     }
+
+    // Mode 2: bracket picks on finished knockout matches
+    if (match.stage !== "GROUP_STAGE") {
+      const { data: bp } = await supabase
+        .from("bracket_predictions")
+        .select("id,predicted_team")
+        .eq("match_id", match.id);
+      for (const b of (bp ?? []) as { id: string; predicted_team: string }[]) {
+        const pts = scoreBracketPrediction(match, b.predicted_team);
+        if (pts === null) continue;
+        await supabase.from("bracket_predictions").update({ points_awarded: pts }).eq("id", b.id);
+      }
+    }
+  }
+
+  // Mode 2: group placements against any FINAL group standings
+  let groupPredsScored = 0;
+  const { data: gsRows } = await supabase
+    .from("group_standings")
+    .select("group_name,standings,final")
+    .eq("final", true);
+  for (const gs of (gsRows ?? []) as { group_name: string; standings: { position: number; team: string }[] }[]) {
+    const actual = [...gs.standings].sort((a, b) => a.position - b.position).map((r) => r.team);
+    const { data: gp } = await supabase
+      .from("group_predictions")
+      .select("id,predicted")
+      .eq("group_name", gs.group_name);
+    for (const p of (gp ?? []) as { id: string; predicted: string[] }[]) {
+      const pts = scoreGroupPrediction(p.predicted, actual);
+      await supabase.from("group_predictions").update({ points_awarded: pts }).eq("id", p.id);
+      groupPredsScored++;
+    }
   }
 
   return NextResponse.json({
     ok: true,
     finishedMatches: matches?.length ?? 0,
     scoredPredictions,
+    groupPredsScored,
   });
 }

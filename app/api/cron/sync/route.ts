@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchAllMatches } from "@/lib/footballData";
+import { fetchAllMatches, fetchStandings } from "@/lib/footballData";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scorePrediction } from "@/lib/scoring";
+import { scoreBracketPrediction, scoreGroupPrediction } from "@/lib/scoring2";
 import type { Match } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +81,59 @@ export async function GET(req: NextRequest) {
       scoredPredictions++;
     }
     scoredMatches++;
+
+    // Mode 2: score bracket picks for finished knockout matches.
+    if (match.stage !== "GROUP_STAGE") {
+      const { data: bp } = await supabase
+        .from("bracket_predictions")
+        .select("id,predicted_team")
+        .eq("match_id", match.id);
+      for (const b of (bp ?? []) as { id: string; predicted_team: string }[]) {
+        const pts = scoreBracketPrediction(match, b.predicted_team);
+        if (pts === null) continue;
+        await supabase.from("bracket_predictions").update({ points_awarded: pts }).eq("id", b.id);
+      }
+    }
+  }
+
+  // ---- Mode 2: sync group standings + score group placements when groups finish ----
+  let standingsSynced = 0;
+  let groupPredsScored = 0;
+  try {
+    const standings = await fetchStandings();
+    const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
+    const groupComplete =
+      groupMatches.length > 0 && groupMatches.every((m) => m.status === "FINISHED");
+
+    if (standings.length > 0) {
+      await supabase.from("group_standings").upsert(
+        standings.map((s) => ({
+          group_name: s.group_name,
+          standings: s.standings,
+          final: groupComplete,
+          updated_at: new Date().toISOString(),
+        })),
+        { onConflict: "group_name" }
+      );
+      standingsSynced = standings.length;
+    }
+
+    if (groupComplete) {
+      for (const s of standings) {
+        const actual = [...s.standings].sort((a, b) => a.position - b.position).map((r) => r.team);
+        const { data: gp } = await supabase
+          .from("group_predictions")
+          .select("id,predicted")
+          .eq("group_name", s.group_name);
+        for (const p of (gp ?? []) as { id: string; predicted: string[] }[]) {
+          const pts = scoreGroupPrediction(p.predicted, actual);
+          await supabase.from("group_predictions").update({ points_awarded: pts }).eq("id", p.id);
+          groupPredsScored++;
+        }
+      }
+    }
+  } catch {
+    // standings are best-effort; never fail the whole sync because of them
   }
 
   return NextResponse.json({
@@ -88,5 +142,7 @@ export async function GET(req: NextRequest) {
     newlyFinished: newlyFinished.length,
     scoredMatches,
     scoredPredictions,
+    standingsSynced,
+    groupPredsScored,
   });
 }
