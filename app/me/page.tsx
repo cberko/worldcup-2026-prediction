@@ -44,8 +44,8 @@ export default async function MePage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight">My Picks</h1>
-          <p className="mt-1 text-sm text-emerald-100/60">{rows.length} picks made.</p>
+          <h1 className="display text-4xl sm:text-5xl">My Picks</h1>
+          <p className="mt-2 text-sm text-emerald-100/60">{rows.length} picks made.</p>
         </div>
         <div className="flex gap-3">
           <Stat label="Total Points" value={total} accent />
@@ -75,10 +75,10 @@ export default async function MePage() {
                 </div>
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-medium text-grass-200">
-                    Pick: {r.pred_home}-{r.pred_away}
+                    Pick: <span className="tnum">{r.pred_home}–{r.pred_away}</span>
                     {m.home_score !== null && m.away_score !== null && (
-                      <span className="ml-2 text-emerald-100/40">
-                        (final {m.home_score}-{m.away_score})
+                      <span className="tnum ml-2 text-emerald-100/40">
+                        (final {m.home_score}–{m.away_score})
                       </span>
                     )}
                   </div>
@@ -101,15 +101,11 @@ export default async function MePage() {
 
 function Stat({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <div className="card px-4 py-2 text-center">
-      <div
-        className={`font-display text-2xl font-extrabold tabular-nums ${
-          accent ? "text-grass-300" : ""
-        }`}
-      >
-        {value}
+    <div className="card px-4 py-2.5 text-center">
+      <div className={`tnum text-2xl font-bold ${accent ? "text-grass-300" : ""}`}>{value}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-100/40">
+        {label}
       </div>
-      <div className="text-[11px] uppercase tracking-wide text-emerald-100/40">{label}</div>
     </div>
   );
 }

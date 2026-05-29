@@ -20,8 +20,8 @@ export default async function LeaderboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Leaderboard</h1>
-        <p className="mt-1 text-sm text-emerald-100/60">
+        <h1 className="display text-4xl sm:text-5xl">Leaderboard</h1>
+        <p className="mt-2 text-sm text-emerald-100/60">
           Ranked by total points. Every round counts the same: side +5, goal diff +6, exact +7.
         </p>
       </div>
@@ -52,17 +52,17 @@ export default async function LeaderboardPage() {
                       me ? "bg-grass-500/10" : ""
                     }`}
                   >
-                    <td className="px-4 py-3 tabular-nums text-emerald-100/60">
+                    <td className="tnum px-4 py-3 text-emerald-100/50">
                       {medal ?? i + 1}
                     </td>
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-semibold">
                       {r.display_name}
                       {me && <span className="ml-2 text-xs text-grass-300">(you)</span>}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-emerald-100/60">
+                    <td className="tnum px-4 py-3 text-right text-emerald-100/60">
                       {r.correct_count}/{r.total_predictions}
                     </td>
-                    <td className="px-4 py-3 text-right font-display text-base font-bold tabular-nums text-grass-300">
+                    <td className="tnum px-4 py-3 text-right text-lg font-bold text-grass-300">
                       {r.total_points}
                     </td>
                   </tr>

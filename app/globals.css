@@ -4,35 +4,99 @@
 
 :root {
   color-scheme: dark;
+  --edge: rgba(255, 255, 255, 0.08);
+  --edge-soft: rgba(255, 255, 255, 0.05);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  @apply bg-pitch-950 text-emerald-50 antialiased;
+  @apply bg-pitch-950 text-emerald-50;
   background-image:
-    radial-gradient(1200px 600px at 80% -10%, rgba(25, 195, 125, 0.12), transparent 60%),
-    radial-gradient(900px 500px at -10% 10%, rgba(245, 197, 66, 0.08), transparent 55%);
+    radial-gradient(1100px 520px at 85% -8%, rgba(25, 195, 125, 0.14), transparent 60%),
+    radial-gradient(820px 480px at -8% 8%, rgba(245, 197, 66, 0.10), transparent 55%),
+    linear-gradient(180deg, #04130c 0%, #03100a 100%);
   background-attachment: fixed;
+  position: relative;
 }
 
-/* subtle pitch stripes for section headers */
+/* fine film grain over everything for depth/texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Anton display: uppercase, tightened, for headlines/section labels */
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  line-height: 0.92;
+  font-weight: 400;
+}
+
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* pitch stripe texture for section bands */
 .pitch-stripes {
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.025) 0px,
-    rgba(255, 255, 255, 0.025) 28px,
-    transparent 28px,
-    transparent 56px
+    rgba(255, 255, 255, 0.022) 0px,
+    rgba(255, 255, 255, 0.022) 30px,
+    transparent 30px,
+    transparent 60px
   );
 }
 
 .card {
-  @apply rounded-2xl border border-white/5 bg-pitch-900/70 shadow-card backdrop-blur-sm;
+  @apply rounded-2xl border bg-pitch-900/60;
+  border-color: var(--edge-soft);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
+    0 16px 50px -20px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
 }
 
 .chip {
-  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider;
 }
 
-/* thin scrollbars */
-::-webkit-scrollbar { height: 8px; width: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; }
+/* number inputs without browser spinners */
+input.score-input::-webkit-outer-spin-button,
+input.score-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.score-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

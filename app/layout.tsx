@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Sora } from "next/font/google";
+import { Hanken_Grotesk, Anton, Space_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { AuthButton } from "@/components/AuthButton";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
-const sora = Sora({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+});
+const anton = Anton({ subsets: ["latin"], weight: ["400"], variable: "--font-display" });
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "World Cup 2026 — Prediction League",
@@ -22,7 +31,7 @@ const NAV = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+    <html lang="en" className={`${hanken.variable} ${anton.variable} ${spaceMono.variable}`}>
       <body className="min-h-screen font-sans">
         <header className="sticky top-0 z-40 border-b border-white/5 bg-pitch-950/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">

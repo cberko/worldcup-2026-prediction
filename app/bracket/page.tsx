@@ -34,7 +34,7 @@ function TeamRow({
           {name}
         </span>
       </div>
-      {score !== null && <span className="text-xs tabular-nums text-emerald-100/60">{score}</span>}
+      {score !== null && <span className="tnum text-xs text-emerald-100/60">{score}</span>}
     </div>
   );
 }
@@ -59,8 +59,8 @@ export default async function BracketPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-extrabold tracking-tight">Bracket</h1>
-        <p className="mt-1 text-sm text-emerald-100/60">
+        <h1 className="display text-4xl sm:text-5xl">Bracket</h1>
+        <p className="mt-2 text-sm text-emerald-100/60">
           The road from the Round of 32 to the final. The advancing team is highlighted in green.
         </p>
       </div>
@@ -75,7 +75,7 @@ export default async function BracketPage() {
             const list = byStage.get(stage) ?? [];
             return (
               <div key={stage} className="flex w-56 shrink-0 flex-col gap-3">
-                <div className="sticky top-0 text-center font-display text-sm font-bold text-gold-300">
+                <div className="display sticky top-0 text-center text-base text-gold-300">
                   {STAGE_LABELS[stage]}
                 </div>
                 {list.length === 0 ? (
