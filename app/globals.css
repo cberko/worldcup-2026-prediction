@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-pitch-950 text-emerald-50 antialiased;
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, rgba(25, 195, 125, 0.12), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(245, 197, 66, 0.08), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* subtle pitch stripes for section headers */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.025) 0px,
+    rgba(255, 255, 255, 0.025) 28px,
+    transparent 28px,
+    transparent 56px
+  );
+}
+
+.card {
+  @apply rounded-2xl border border-white/5 bg-pitch-900/70 shadow-card backdrop-blur-sm;
+}
+
+.chip {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+
+/* thin scrollbars */
+::-webkit-scrollbar { height: 8px; width: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; }

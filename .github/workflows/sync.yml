@@ -1,0 +1,21 @@
+name: Sync World Cup matches
+
+# Pings the /api/cron/sync endpoint to pull fixtures & score finished matches.
+# Vercel Hobby crons run only once/day, so this gives us frequent updates for free.
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes (GitHub may delay under load)
+  workflow_dispatch: {} # allow manual run from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync
+        run: |
+          code=$(curl -s -o /tmp/out.json -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SYNC_URL }}")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          test "$code" = "200"
