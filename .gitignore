@@ -7,3 +7,10 @@ out
 .DS_Store
 *.log
 next-env.d.ts
+
+# local simulation artifacts
+sim/fixtures.json
+sim/results.json
+supabase/.branches
+supabase/.temp
+sim/screens/

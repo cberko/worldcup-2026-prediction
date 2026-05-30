@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const KO_STAGES = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"];
 
-type StandingRow = { position: number; team: string };
+type StandingRow = { position: number; team: string; played?: number; points?: number; gd?: number };
 
 export default async function TournamentPage() {
   const supabase = createClient();
@@ -43,14 +43,21 @@ export default async function TournamentPage() {
   }
 
   const groups: GroupData[] = (gs ?? []).map((g) => {
-    const rows = [...((g.standings as StandingRow[]) ?? [])].sort((a, b) => a.position - b.position);
-    const teams = rows.map((r) => r.team);
+    const rows = [...((g.standings as StandingRow[]) ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((r) => ({
+        position: r.position,
+        team: r.team,
+        played: r.played ?? 0,
+        points: r.points ?? 0,
+        gd: r.gd ?? 0,
+      }));
     return {
       group_name: g.group_name,
-      teams,
+      rows,
       predicted: predByGroup.get(g.group_name) ?? null,
       points: ptsByGroup.get(g.group_name) ?? null,
-      actual: g.final ? teams : null, // when final, standings are the actual order
+      final: !!g.final,
     };
   });
 

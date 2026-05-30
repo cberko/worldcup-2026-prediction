@@ -105,15 +105,28 @@ export async function fetchAllMatches(): Promise<Match[]> {
   return (data.matches ?? []).map(mapMatch);
 }
 
+export type StandingRow = {
+  position: number;
+  team: string;
+  played: number;
+  points: number;
+  gd: number;
+};
 export type GroupStanding = {
   group_name: string;
-  standings: { position: number; team: string }[];
+  standings: StandingRow[];
 };
 
 type FdStanding = {
   type: string; // TOTAL | HOME | AWAY
   group: string | null; // "GROUP_A" or "Group A"
-  table: { position: number; team: { name: string | null; shortName?: string | null } }[];
+  table: {
+    position: number;
+    team: { name: string | null; shortName?: string | null };
+    playedGames?: number;
+    points?: number;
+    goalDifference?: number;
+  }[];
 };
 
 /** Fetch the group tables (TOTAL) for the competition. */
@@ -139,6 +152,9 @@ export async function fetchStandings(): Promise<GroupStanding[]> {
       standings: s.table.map((r) => ({
         position: r.position,
         team: r.team.name ?? r.team.shortName ?? "TBD",
+        played: r.playedGames ?? 0,
+        points: r.points ?? 0,
+        gd: r.goalDifference ?? 0,
       })),
     }));
 }

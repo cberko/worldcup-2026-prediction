@@ -11,7 +11,7 @@ type Props = {
   loggedIn: boolean;
 };
 
-type View = "upcoming" | "all";
+type View = "upcoming" | "results" | "all";
 
 // Group by the tournament's host-region day (fixed tz) so SSR and client agree
 // (no hydration mismatch) and each match lands on its real "match day".
@@ -51,6 +51,20 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
     return [...map.values()];
   }, [matches]);
 
+  // ----- Results: finished matches, most-recent day first (newest → oldest) -----
+  const resultDays = useMemo(() => {
+    const fin = matches
+      .filter((m) => m.status === "FINISHED")
+      .sort((a, b) => +new Date(b.kickoff) - +new Date(a.kickoff));
+    const map = new Map<string, { label: string; games: Match[] }>();
+    for (const m of fin) {
+      const k = dayKey(m.kickoff);
+      if (!map.has(k)) map.set(k, { label: dayLabel(m.kickoff), games: [] });
+      map.get(k)!.games.push(m);
+    }
+    return [...map.values()];
+  }, [matches]);
+
   // ----- All: by stage, group stage split by matchday -----
   const byStage = useMemo(() => {
     const m = new Map<Stage, Match[]>();
@@ -68,6 +82,9 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
       <div className="flex items-center gap-2">
         <Tab active={view === "upcoming"} onClick={() => setView("upcoming")}>
           Upcoming
+        </Tab>
+        <Tab active={view === "results"} onClick={() => setView("results")}>
+          Results
         </Tab>
         <Tab active={view === "all"} onClick={() => setView("all")}>
           All matches
@@ -101,6 +118,21 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
             {days.map((d, i) => (
               <section key={d.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
                 <DayHeader label={d.label} count={d.games.length} first={i === 0} />
+                {cards(d.games)}
+              </section>
+            ))}
+          </div>
+        )
+      ) : view === "results" ? (
+        resultDays.length === 0 ? (
+          <div className="card p-10 text-center text-sm text-emerald-100/60">
+            No matches played yet — results show here newest first.
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {resultDays.map((d, i) => (
+              <section key={d.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
+                <DayHeader label={d.label} count={d.games.length} first={false} />
                 {cards(d.games)}
               </section>
             ))}
