@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { GroupPredictor, type GroupData } from "@/components/GroupPredictor";
+import { BracketBuilder } from "@/components/BracketBuilder";
+import { buildBracketRounds, numberKnockout, r32TeamsKnown } from "@/lib/bracket";
+import type { Match } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const KO_STAGES = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"];
 
 type StandingRow = { position: number; team: string };
 
@@ -48,6 +53,32 @@ export default async function TournamentPage() {
       actual: g.final ? teams : null, // when final, standings are the actual order
     };
   });
+
+  // ---- bracket (knockout) data ----
+  const { data: koData } = await supabase
+    .from("matches")
+    .select("*")
+    .in("stage", KO_STAGES);
+  const koMatches = (koData ?? []) as Match[];
+  const rounds = buildBracketRounds(koMatches);
+  const { num2id } = numberKnockout(koMatches);
+  const ready = r32TeamsKnown(koMatches);
+  const r32Kicks = koMatches
+    .filter((m) => m.stage === "LAST_32")
+    .map((m) => new Date(m.kickoff).getTime())
+    .sort((a, b) => a - b);
+  const bracketLocked = r32Kicks.length > 0 && r32Kicks[0] <= Date.now();
+
+  const bracketPicks: Record<string, string> = {};
+  if (user) {
+    const { data: bp } = await supabase
+      .from("bracket_predictions")
+      .select("match_id,predicted_team")
+      .eq("user_id", user.id);
+    (bp ?? []).forEach((p) => {
+      bracketPicks[p.match_id] = p.predicted_team;
+    });
+  }
 
   return (
     <div className="space-y-10">
@@ -100,16 +131,18 @@ export default async function TournamentPage() {
       <section>
         <div className="pitch-stripes mb-5 flex items-baseline gap-3 overflow-hidden rounded-xl border border-white/5 bg-pitch-900/40 px-4 py-3">
           <h2 className="display text-2xl sm:text-3xl">Knockout Bracket</h2>
-          <span className="tnum text-xs text-emerald-100/40">R32 +2 → Champion +32</span>
+          <span className="tnum text-xs text-emerald-100/40">
+            {bracketLocked ? "locked" : "R32 +2 → Champion +32"}
+          </span>
         </div>
-        <div className="card p-8 text-center">
-          <div className="text-4xl">🏆</div>
-          <h3 className="display mt-3 text-2xl">Opens after the group stage</h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-emerald-100/60">
-            Once the 32 qualifiers are set, you&apos;ll pick every knockout winner from the Round of
-            32 through to lifting the trophy — locked at the first R32 kickoff.
-          </p>
-        </div>
+        <BracketBuilder
+          rounds={rounds}
+          num2id={num2id}
+          initialPicks={bracketPicks}
+          locked={bracketLocked}
+          ready={ready}
+          loggedIn={!!user}
+        />
       </section>
     </div>
   );
