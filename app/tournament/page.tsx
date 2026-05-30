@@ -55,8 +55,8 @@ export default async function TournamentPage() {
       <div className="card relative overflow-hidden">
         <div className="pitch-stripes pointer-events-none absolute inset-0 opacity-40" />
         <div className="relative p-6 sm:p-9">
-          <span className="chip bg-gold-500/15 text-gold-300">Mode 2 · Tournament Predictor</span>
-          <h1 className="display mt-4 text-4xl sm:text-6xl">Bracket Challenge</h1>
+          <span className="chip bg-gold-500/15 text-gold-300">Bracket · World Cup 2026</span>
+          <h1 className="display mt-4 text-4xl sm:text-6xl">Call the whole tree</h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-emerald-100/60">
             Predict how the whole tournament unfolds. Order every group now; once the group stage
             ends you&apos;ll fill the knockout bracket all the way to the champion.

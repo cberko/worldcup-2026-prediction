@@ -3,6 +3,7 @@ import { Hanken_Grotesk, Anton, Space_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { AuthButton } from "@/components/AuthButton";
+import { ModeNav } from "@/components/ModeNav";
 
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],
@@ -22,20 +23,12 @@ export const metadata: Metadata = {
     "Predict World Cup 2026 scorelines, earn points, and climb the leaderboard. Correct side +5, goal difference +6, exact score +9.",
 };
 
-const NAV = [
-  { href: "/", label: "Matches" },
-  { href: "/tournament", label: "Tournament" },
-  { href: "/bracket", label: "Results" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/me", label: "My Picks" },
-];
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${hanken.variable} ${anton.variable} ${spaceMono.variable}`}>
       <body className="min-h-screen font-sans">
-        <header className="sticky top-0 z-40 border-b border-white/5 bg-pitch-950/80 backdrop-blur-md">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+        <header className="sticky top-0 z-40 border-b border-white/5 bg-pitch-950/85 backdrop-blur-md">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 pt-3">
             <Link href="/" className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-grass-500/15 text-lg shadow-glow">
                 ⚽
@@ -47,34 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </span>
               </span>
             </Link>
-
-            <nav className="hidden items-center gap-1 sm:flex">
-              {NAV.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className="rounded-lg px-3 py-1.5 text-sm text-emerald-100/70 transition hover:bg-white/5 hover:text-white"
-                >
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-
             <AuthButton />
           </div>
 
-          {/* mobile nav */}
-          <nav className="flex items-center gap-1 overflow-x-auto border-t border-white/5 px-3 py-2 sm:hidden">
-            {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="whitespace-nowrap rounded-lg px-3 py-1 text-sm text-emerald-100/70 hover:bg-white/5 hover:text-white"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="mx-auto max-w-5xl px-4 pb-2.5 pt-3">
+            <ModeNav />
+          </div>
         </header>
 
         <main className="mx-auto max-w-5xl px-4 py-6 sm:py-10">{children}</main>

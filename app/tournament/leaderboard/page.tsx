@@ -1,43 +1,49 @@
 import { createClient } from "@/lib/supabase/server";
 import { StandingsTable, medal } from "@/components/StandingsTable";
-import type { LeaderboardRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function LeaderboardPage() {
+type TournamentRow = {
+  user_id: string;
+  display_name: string;
+  group_points: number;
+  bracket_points: number;
+  total_points: number;
+};
+
+export default async function TournamentLeaderboardPage() {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { data } = await supabase
-    .from("leaderboard")
+    .from("tournament_leaderboard")
     .select("*")
-    .order("total_points", { ascending: false })
-    .order("correct_count", { ascending: false });
-  const rows = (data ?? []) as LeaderboardRow[];
+    .order("total_points", { ascending: false });
+  const rows = (data ?? []) as TournamentRow[];
 
   return (
     <div className="space-y-6">
       <div>
-        <span className="chip bg-grass-500/15 text-grass-300">Match Picks</span>
+        <span className="chip bg-gold-500/15 text-gold-300">Bracket</span>
         <h1 className="display mt-3 text-4xl sm:text-5xl">Leaderboard</h1>
         <p className="mt-2 text-sm text-emerald-100/60">
-          Ranked by total points. Each scoreline: correct side +5 · goal difference +6 · exact +9.
+          Group placements (+1 each) plus knockout advancement (R32 +2 → champion +32).
         </p>
       </div>
 
       {rows.length === 0 ? (
         <div className="card p-8 text-center text-sm text-emerald-100/60">
-          No points yet — the table fills as matches are played.
+          No tournament points yet — predict the groups to get on the board.
         </div>
       ) : (
         <StandingsTable
-          accent="grass"
-          head={["#", "Player", "Hits", "Points"]}
+          accent="gold"
+          head={["#", "Player", "Groups", "Bracket", "Total"]}
           rows={rows.map((r, i) => ({
             me: user?.id === r.user_id,
-            cells: [medal(i), r.display_name, `${r.correct_count}/${r.total_predictions}`, r.total_points],
+            cells: [medal(i), r.display_name, r.group_points, r.bracket_points, r.total_points],
           }))}
         />
       )}

@@ -44,7 +44,7 @@ function Hero({ loggedIn, total }: { loggedIn: boolean; total: number }) {
       <div className="pitch-stripes pointer-events-none absolute inset-0 opacity-40" />
       <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-grass-500/10 blur-3xl" />
       <div className="relative p-6 sm:p-10">
-        <span className="chip bg-grass-500/15 text-grass-300">World Cup 2026 · Jun 11 – Jul 19</span>
+        <span className="chip bg-grass-500/15 text-grass-300">Match Picks · World Cup 2026</span>
         <h1 className="display mt-4 text-5xl text-emerald-50 sm:text-7xl">
           Predict the scores.
           <br />
