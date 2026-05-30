@@ -5,9 +5,9 @@ Predict the scoreline of every World Cup 2026 match, earn points, and climb the 
 - **Every match:** pick a **scoreline** (e.g. `2-1`) — group stage and knockouts alike.
 - **Scoring (flat, every round counts the same):**
   - Correct side (winner / draw) → **+5**
-  - Correct side **and** goal difference → **+6**
-  - Exact score → **+7**
-  - Wrong side → **0**
+  - Correct side **and** (signed) goal difference → **+6**
+  - Exact score → **+9**
+  - Wrong side → **0** (the difference is signed — a 3–1 pick on a team that lost 1–3 scores nothing)
 - Matches are pulled live from the football-data.org API (not static).
 - Picks **lock** at kickoff; scores and points **update automatically** after a match finishes.
 
@@ -48,7 +48,7 @@ football-data token to try the app — sample data is provided.
         ```bash
         curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/dev/rescore
         ```
-   - Check **Leaderboard** and **My Picks** — the 5/6/7 points should appear.
+   - Check **Leaderboard** and **My Picks** — the 5/6/9 points should appear.
 
 ---
 

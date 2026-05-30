@@ -58,7 +58,7 @@ function Hero({ loggedIn, total }: { loggedIn: boolean; total: number }) {
           {[
             ["Right side", "+5"],
             ["Goal difference", "+6"],
-            ["Exact score", "+7"],
+            ["Exact score", "+9"],
           ].map(([label, pts]) => (
             <div
               key={label}

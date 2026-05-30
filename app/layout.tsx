@@ -19,7 +19,7 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "World Cup 2026 — Prediction League",
   description:
-    "Predict World Cup 2026 scorelines, earn points, and climb the leaderboard. Correct side +5, goal difference +6, exact score +7.",
+    "Predict World Cup 2026 scorelines, earn points, and climb the leaderboard. Correct side +5, goal difference +6, exact score +9.",
 };
 
 const NAV = [
@@ -80,7 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="mx-auto max-w-5xl px-4 py-6 sm:py-10">{children}</main>
 
         <footer className="mx-auto max-w-5xl px-4 py-10 text-center text-xs text-emerald-200/40">
-          Data via football-data.org · Predict the score: correct side +5 · goal difference +6 · exact score +7
+          Data via football-data.org · Predict the score: correct side +5 · goal difference +6 · exact score +9
         </footer>
       </body>
     </html>

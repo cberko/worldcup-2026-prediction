@@ -1,11 +1,12 @@
 import type { Stage, Match } from "./types";
 
 // Flat scoring — same for every round (group → final), no multipliers.
-// Correct side (1X2): +5 · Correct side & goal difference: +6 · Exact score: +7 · Wrong side: 0
+// Correct side: +5 · Correct side & (signed) goal difference: +6 · Exact score: +9 · Wrong side: 0
+// "Difference" is signed: you must get the winner right too — a 3-1 pick on a team that lost 1-3 scores 0.
 export const POINTS = {
   SIDE: 5,
   DIFF: 6,
-  EXACT: 7,
+  EXACT: 9,
 } as const;
 
 export const MAX_POINTS = POINTS.EXACT;
@@ -35,7 +36,7 @@ const sign = (n: number): number => (n > 0 ? 1 : n < 0 ? -1 : 0);
 
 /**
  * Score a predicted scoreline against a finished match.
- * Returns 0/5/6/7, or null if the match doesn't have a final score yet.
+ * Returns 0/5/6/9, or null if the match doesn't have a final score yet.
  */
 export function scorePrediction(
   match: Pick<Match, "home_score" | "away_score">,

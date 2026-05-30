@@ -28,7 +28,7 @@ export default async function LeaderboardPage({
       <div>
         <h1 className="display text-4xl sm:text-5xl">Leaderboard</h1>
         <p className="mt-2 text-sm text-emerald-100/60">
-          Two games, two tables. Match Picks scores each scoreline (5/6/7); Tournament scores group
+          Two games, two tables. Match Picks scores each scoreline (5/6/9); Tournament scores group
           placements and bracket advancement.
         </p>
       </div>
