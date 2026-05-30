@@ -16,6 +16,16 @@ export default async function KnockoutPage() {
   const { data: koData } = await supabase.from("matches").select("*").in("stage", KO_STAGES);
   const koMatches = (koData ?? []) as Match[];
 
+  // team → crest, from every match (group fixtures carry all 48 teams' crests)
+  const { data: crestRows } = await supabase
+    .from("matches")
+    .select("home_team,home_crest,away_team,away_crest");
+  const crestByTeam: Record<string, string> = {};
+  for (const r of crestRows ?? []) {
+    if (r.home_crest) crestByTeam[r.home_team] = r.home_crest;
+    if (r.away_crest) crestByTeam[r.away_team] = r.away_crest;
+  }
+
   const rounds = buildBracketRounds(koMatches);
   const { num2id } = numberKnockout(koMatches);
   const ready = r32TeamsKnown(koMatches);
@@ -67,6 +77,7 @@ export default async function KnockoutPage() {
           rounds={rounds}
           num2id={num2id}
           matchById={matchById}
+          crestByTeam={crestByTeam}
           initialPicks={bracketPicks}
           locked={bracketLocked}
           ready={ready}
