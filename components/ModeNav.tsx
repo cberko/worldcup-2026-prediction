@@ -29,8 +29,8 @@ const MODES: {
     tag: "Call the whole tree",
     home: "/tournament",
     pages: [
-      { href: "/tournament", label: "Predict" },
-      { href: "/bracket", label: "Results" },
+      { href: "/tournament", label: "Group Stage" },
+      { href: "/tournament/knockout", label: "Knockout Stage" },
       { href: "/tournament/leaderboard", label: "Leaderboard" },
     ],
   },
