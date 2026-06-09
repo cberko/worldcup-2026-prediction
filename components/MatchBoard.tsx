@@ -26,16 +26,37 @@ const dayLabel = (iso: string) =>
   }).format(new Date(iso));
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
+const DAYS_STEP = 4; // how many day-groups to reveal at a time
+
 export function MatchBoard({ matches, preds, loggedIn }: Props) {
   const [view, setView] = useState<View>("upcoming");
+  const [shownDays, setShownDays] = useState(DAYS_STEP);
+
+  // reset the reveal window whenever the active view changes
+  const setViewReset = (v: View) => {
+    setView(v);
+    setShownDays(DAYS_STEP);
+  };
 
   const cards = (list: Match[]) => (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {list.map((m) => (
         <MatchCard key={m.id} match={m} initialPred={preds[m.id] ?? null} loggedIn={loggedIn} />
       ))}
     </div>
   );
+
+  const ShowMore = ({ total }: { total: number }) =>
+    shownDays < total ? (
+      <div className="flex justify-center pt-2">
+        <button
+          onClick={() => setShownDays((n) => n + DAYS_STEP)}
+          className="rounded-lg border border-white/10 bg-white/5 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-emerald-100/70 transition hover:border-grass-500/40 hover:text-grass-300"
+        >
+          Show more days · {total - shownDays} left
+        </button>
+      </div>
+    ) : null;
 
   // ----- Upcoming: not-finished matches grouped by local day -----
   const days = useMemo(() => {
@@ -80,13 +101,13 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
     <div className="space-y-8">
       {/* tabs */}
       <div className="flex items-center gap-2">
-        <Tab active={view === "upcoming"} onClick={() => setView("upcoming")}>
+        <Tab active={view === "upcoming"} onClick={() => setViewReset("upcoming")}>
           Upcoming
         </Tab>
-        <Tab active={view === "results"} onClick={() => setView("results")}>
+        <Tab active={view === "results"} onClick={() => setViewReset("results")}>
           Results
         </Tab>
-        <Tab active={view === "all"} onClick={() => setView("all")}>
+        <Tab active={view === "all"} onClick={() => setViewReset("all")}>
           All matches
         </Tab>
         {view === "all" && (
@@ -115,12 +136,13 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
           </div>
         ) : (
           <div className="space-y-10">
-            {days.map((d, i) => (
+            {days.slice(0, shownDays).map((d, i) => (
               <section key={d.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
                 <DayHeader label={d.label} count={d.games.length} first={i === 0} />
                 {cards(d.games)}
               </section>
             ))}
+            <ShowMore total={days.length} />
           </div>
         )
       ) : view === "results" ? (
@@ -130,12 +152,13 @@ export function MatchBoard({ matches, preds, loggedIn }: Props) {
           </div>
         ) : (
           <div className="space-y-10">
-            {resultDays.map((d, i) => (
+            {resultDays.slice(0, shownDays).map((d, i) => (
               <section key={d.label} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
                 <DayHeader label={d.label} count={d.games.length} first={false} />
                 {cards(d.games)}
               </section>
             ))}
+            <ShowMore total={resultDays.length} />
           </div>
         )
       ) : (

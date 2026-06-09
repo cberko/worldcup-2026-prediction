@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type StandRow = {
   position: number;
@@ -27,7 +27,7 @@ function GroupCard({ data, locked, loggedIn }: { data: GroupData; locked: boolea
 
   const [order, setOrder] = useState<string[]>(data.predicted ?? teamsInOrder);
   const [savedOrder, setSavedOrder] = useState<string[] | null>(data.predicted);
-  const [saving, setSaving] = useState(false);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const dirty = !savedOrder || savedOrder.join("|") !== order.join("|");
 
@@ -38,19 +38,34 @@ function GroupCard({ data, locked, loggedIn }: { data: GroupData; locked: boolea
     [next[i], next[j]] = [next[j], next[i]];
     setOrder(next);
   }
-  async function save() {
-    if (saving || !dirty) return;
-    if (!loggedIn) return window.dispatchEvent(new Event("open-auth"));
-    setSaving(true);
+
+  // Debounced auto-save: persist the order shortly after the last reorder.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (tableMode || !loggedIn || !dirty) return;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => void save(order), 650);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, loggedIn, tableMode]);
+
+  async function save(ord: string[]) {
+    setState("saving");
     setError(null);
     const res = await fetch("/api/group-predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ group_name: data.group_name, ordering: order }),
+      body: JSON.stringify({ group_name: data.group_name, ordering: ord }),
     });
-    setSaving(false);
-    if (res.ok) setSavedOrder(order);
-    else setError((await res.json().catch(() => ({}))).error ?? "Could not save");
+    if (res.ok) {
+      setSavedOrder(ord);
+      setState("saved");
+    } else {
+      setError((await res.json().catch(() => ({}))).error ?? "Could not save");
+      setState("error");
+    }
   }
 
   return (
@@ -137,15 +152,26 @@ function GroupCard({ data, locked, loggedIn }: { data: GroupData; locked: boolea
       )}
 
       {!tableMode && (
-        <button
-          onClick={save}
-          disabled={saving || (!dirty && !!savedOrder)}
-          className={`mt-3 w-full rounded-lg py-2 text-xs font-bold uppercase tracking-wider transition ${
-            dirty ? "bg-grass-500 text-pitch-950 hover:bg-grass-400" : "border border-grass-500/30 bg-grass-500/10 text-grass-300"
-          }`}
-        >
-          {saving ? "Saving…" : !loggedIn ? "Sign in to predict" : dirty ? "Save order" : "✓ Saved"}
-        </button>
+        <div className="mt-3 flex justify-center">
+          {!loggedIn ? (
+            <button
+              onClick={() => window.dispatchEvent(new Event("open-auth"))}
+              className="rounded-lg bg-grass-500 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-pitch-950 transition hover:bg-grass-400"
+            >
+              Sign in to predict
+            </button>
+          ) : state === "saving" ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-100/55">
+              <span className="h-1.5 w-1.5 animate-pulse-dot rounded-full bg-grass-400" /> Saving…
+            </span>
+          ) : !dirty && savedOrder ? (
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-grass-300">
+              ✓ Saved <span className="font-normal normal-case text-emerald-100/40">· reorder anytime</span>
+            </span>
+          ) : (
+            <span className="text-[11px] font-medium text-gold-300/80">Reorder 1→4 — saves automatically</span>
+          )}
+        </div>
       )}
       {tableMode && data.predicted && (
         <p className="mt-2 text-[11px] text-emerald-100/40">

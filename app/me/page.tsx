@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { STAGE_LABELS } from "@/lib/scoring";
-import { formatKickoff } from "@/lib/format";
+import { KickoffTime } from "@/components/KickoffTime";
 import type { Match, Stage } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +70,7 @@ export default async function MePage() {
                     {m.home_team} <span className="text-emerald-100/40">vs</span> {m.away_team}
                   </div>
                   <div className="mt-0.5 text-xs text-emerald-100/45">
-                    {STAGE_LABELS[m.stage as Stage]} · {formatKickoff(m.kickoff)}
+                    {STAGE_LABELS[m.stage as Stage]} · <KickoffTime iso={m.kickoff} />
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
