@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
 
   // Create the browser client only on the client (keeps SSR/build env-free).
   useEffect(() => {
@@ -37,6 +38,14 @@ export function AuthButton() {
           Hi, <span className="font-semibold text-white">{name}</span>
         </span>
         <button
+          onClick={() => setPwOpen(true)}
+          title="Change password"
+          className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-emerald-100/80 transition hover:bg-white/5"
+        >
+          <span className="sm:hidden">🔑</span>
+          <span className="hidden sm:inline">Change password</span>
+        </button>
+        <button
           onClick={async () => {
             await createClient().auth.signOut();
             window.location.reload();
@@ -45,6 +54,7 @@ export function AuthButton() {
         >
           Sign out
         </button>
+        {pwOpen && <PasswordModal onClose={() => setPwOpen(false)} />}
       </div>
     );
   }
@@ -59,6 +69,88 @@ export function AuthButton() {
       </button>
       {open && <AuthModal onClose={() => setOpen(false)} />}
     </>
+  );
+}
+
+function PasswordModal({ onClose }: { onClose: () => void }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (pw.length < 6) {
+      setErr("Password must be at least 6 characters.");
+      return;
+    }
+    if (pw !== pw2) {
+      setErr("Passwords don't match.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await createClient().auth.updateUser({ password: pw });
+    setLoading(false);
+    if (error) {
+      setErr(
+        /same|different/i.test(error.message)
+          ? "New password must be different from the old one."
+          : error.message
+      );
+      return;
+    }
+    setDone(true);
+    setTimeout(onClose, 1200);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="card w-full max-w-sm animate-fade-up p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 className="font-display text-xl font-bold">Change password</h2>
+        <p className="mt-1 text-sm text-emerald-100/60">
+          Pick a new password — takes effect immediately.
+        </p>
+
+        <form onSubmit={submit} className="mt-5 space-y-3">
+          <input
+            type="password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            placeholder="New password"
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
+          />
+          <input
+            type="password"
+            value={pw2}
+            onChange={(e) => setPw2(e.target.value)}
+            placeholder="Repeat new password"
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
+          />
+          <button
+            disabled={loading || done}
+            className="w-full rounded-xl bg-grass-500 py-2 text-sm font-semibold text-pitch-950 transition hover:bg-grass-400 disabled:opacity-50"
+          >
+            {done ? "✓ Password changed" : loading ? "Please wait…" : "Change password"}
+          </button>
+        </form>
+
+        {err && <p className="mt-3 text-sm text-rose-300">{err}</p>}
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full text-center text-xs text-emerald-100/40 hover:text-emerald-100/70"
+        >
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 
