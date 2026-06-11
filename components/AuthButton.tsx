@@ -67,6 +67,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
 
   const redirectTo =
     typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
@@ -74,6 +75,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+    setRateLimited(false);
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -83,8 +85,16 @@ function AuthModal({ onClose }: { onClose: () => void }) {
       },
     });
     setLoading(false);
-    if (error) setErr(error.message);
-    else setSent(true);
+    if (error) {
+      // Supabase's built-in email service is tightly rate-limited (≈2/hour). Steer
+      // users to the email-free options instead of showing a raw error.
+      if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+        setRateLimited(true);
+        setErr("Magic-link emails are temporarily rate-limited. Use Google or continue as a guest below — no email needed.");
+      } else {
+        setErr(error.message);
+      }
+    } else setSent(true);
   }
 
   async function google() {
@@ -167,14 +177,20 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={guest}
               disabled={loading}
-              className="mt-2 w-full rounded-xl border border-white/10 py-2 text-sm font-medium text-emerald-100/70 transition hover:bg-white/5 disabled:opacity-50"
+              className={`mt-2 w-full rounded-xl py-2 text-sm font-medium transition disabled:opacity-50 ${
+                rateLimited
+                  ? "bg-grass-500 font-semibold text-pitch-950 hover:bg-grass-400"
+                  : "border border-white/10 text-emerald-100/70 hover:bg-white/5"
+              }`}
             >
-              Continue as guest
+              Continue as guest{rateLimited ? " — no email needed" : ""}
             </button>
           </>
         )}
 
-        {err && <p className="mt-3 text-sm text-rose-300">{err}</p>}
+        {err && (
+          <p className={`mt-3 text-sm ${rateLimited ? "text-gold-300" : "text-rose-300"}`}>{err}</p>
+        )}
 
         <button
           onClick={onClose}
