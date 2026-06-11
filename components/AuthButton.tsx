@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { usernameToEmail, isValidUsername } from "@/lib/username";
 import type { User } from "@supabase/supabase-js";
 
 export function AuthButton() {
@@ -38,6 +39,7 @@ export function AuthButton() {
         <button
           onClick={async () => {
             await createClient().auth.signOut();
+            window.location.reload();
           }}
           className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-emerald-100/80 transition hover:bg-white/5"
         >
@@ -60,63 +62,63 @@ export function AuthButton() {
   );
 }
 
+type Mode = "signin" | "signup";
+
 function AuthModal({ onClose }: { onClose: () => void }) {
   const supabase = createClient();
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [sent, setSent] = useState(false);
+  const [mode, setMode] = useState<Mode>("signin");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [rateLimited, setRateLimited] = useState(false);
 
-  const redirectTo =
-    typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
-
-  async function sendMagicLink(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    setRateLimited(false);
+
+    if (!isValidUsername(username)) {
+      setErr("Username must be 3–32 letters or numbers.");
+      return;
+    }
+    if (password.length < 6) {
+      setErr("Password must be at least 6 characters.");
+      return;
+    }
+    const email = usernameToEmail(username);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: redirectTo,
-        data: name ? { display_name: name } : undefined,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      // Supabase's built-in email service is tightly rate-limited (≈2/hour). Steer
-      // users to the email-free options instead of showing a raw error.
-      if (error.code === "over_email_send_rate_limit" || error.status === 429) {
-        setRateLimited(true);
-        setErr("Magic-link emails are temporarily rate-limited. Use Google or continue as a guest below — no email needed.");
-      } else {
-        setErr(error.message);
+
+    if (mode === "signup") {
+      // Server-side sign-up (admin API, pre-confirmed) — no email is ever sent.
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setLoading(false);
+        setErr(j.error ?? "Sign-up failed. Try again.");
+        return;
       }
-    } else setSent(true);
-  }
+      const { error: e2 } = await supabase.auth.signInWithPassword({ email, password });
+      if (e2) {
+        setLoading(false);
+        setErr("Account created. Please sign in.");
+        setMode("signin");
+        return;
+      }
+      window.location.reload();
+      return;
+    }
 
-  async function google() {
-    setErr(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (error) setErr(error.message);
-  }
-
-  // One-click guest account (great for local testing). Requires Anonymous
-  // sign-ins to be enabled in Supabase → Authentication → Sign In / Providers.
-  async function guest() {
-    setErr(null);
-    setLoading(true);
-    const { error } = await supabase.auth.signInAnonymously({
-      options: { data: { display_name: name || "Guest" } },
-    });
-    setLoading(false);
-    if (error) setErr(error.message);
-    else onClose();
+    // sign in
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      setErr("Wrong username or password.");
+      return;
+    }
+    window.location.reload();
   }
 
   return (
@@ -124,73 +126,55 @@ function AuthModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div
-        className="card w-full max-w-sm animate-fade-up p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="font-display text-xl font-bold">Join the prediction league</h2>
+      <div className="card w-full max-w-sm animate-fade-up p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 className="font-display text-xl font-bold">
+          {mode === "signin" ? "Welcome back" : "Join the prediction league"}
+        </h2>
         <p className="mt-1 text-sm text-emerald-100/60">
-          We&apos;ll email you a magic sign-in link. No password needed.
+          {mode === "signin"
+            ? "Sign in with your username and password."
+            : "Pick a username and password — no email needed."}
         </p>
 
-        {sent ? (
-          <div className="mt-5 rounded-xl border border-grass-500/30 bg-grass-500/10 p-4 text-sm">
-            📬 A sign-in link was sent to <b>{email}</b>. Click the link in your email.
-          </div>
-        ) : (
-          <>
-            <form onSubmit={sendMagicLink} className="mt-5 space-y-3">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Display name (e.g. Berke)"
-                className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
-              />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
-              />
-              <button
-                disabled={loading}
-                className="w-full rounded-xl bg-grass-500 py-2 text-sm font-semibold text-pitch-950 transition hover:bg-grass-400 disabled:opacity-50"
-              >
-                {loading ? "Sending…" : "Send sign-in link"}
-              </button>
-            </form>
+        <form onSubmit={submit} className="mt-5 space-y-3">
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="username"
+            className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            className="w-full rounded-xl border border-white/10 bg-pitch-800/60 px-3 py-2 text-sm outline-none focus:border-grass-500/60"
+          />
+          <button
+            disabled={loading}
+            className="w-full rounded-xl bg-grass-500 py-2 text-sm font-semibold text-pitch-950 transition hover:bg-grass-400 disabled:opacity-50"
+          >
+            {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+          </button>
+        </form>
 
-            <div className="my-4 flex items-center gap-3 text-xs text-emerald-100/40">
-              <span className="h-px flex-1 bg-white/10" /> or{" "}
-              <span className="h-px flex-1 bg-white/10" />
-            </div>
+        <button
+          onClick={() => {
+            setErr(null);
+            setMode((m) => (m === "signin" ? "signup" : "signin"));
+          }}
+          className="mt-3 w-full text-center text-xs text-emerald-100/55 transition hover:text-emerald-100/90"
+        >
+          {mode === "signin"
+            ? "New here? Create an account"
+            : "Already have an account? Sign in"}
+        </button>
 
-            <button
-              onClick={google}
-              className="w-full rounded-xl border border-white/10 py-2 text-sm font-medium transition hover:bg-white/5"
-            >
-              Continue with Google
-            </button>
-
-            <button
-              onClick={guest}
-              disabled={loading}
-              className={`mt-2 w-full rounded-xl py-2 text-sm font-medium transition disabled:opacity-50 ${
-                rateLimited
-                  ? "bg-grass-500 font-semibold text-pitch-950 hover:bg-grass-400"
-                  : "border border-white/10 text-emerald-100/70 hover:bg-white/5"
-              }`}
-            >
-              Continue as guest{rateLimited ? " — no email needed" : ""}
-            </button>
-          </>
-        )}
-
-        {err && (
-          <p className={`mt-3 text-sm ${rateLimited ? "text-gold-300" : "text-rose-300"}`}>{err}</p>
-        )}
+        {err && <p className="mt-3 text-sm text-rose-300">{err}</p>}
 
         <button
           onClick={onClose}

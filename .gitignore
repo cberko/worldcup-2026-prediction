@@ -14,3 +14,8 @@ sim/results.json
 supabase/.branches
 supabase/.temp
 sim/screens/
+
+# auth migration output (contains plaintext passwords)
+sim/credentials-*.csv
+.env*.local
+tsconfig.tsbuildinfo
